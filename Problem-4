@@ -1,0 +1,26 @@
+
+#!/bin/bash
+
+# Variables
+URL="http://your-application-url.com"  # Replace with the actual application URL
+LOGFILE="/var/log/application_status.log"
+STATUS_CODE=$(curl -o /dev/null -s -w "%{http_code}" $URL)
+
+# Function to get current timestamp
+timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
+
+# Function to check application status
+check_application_status() {
+    echo "$(timestamp) - Checking application status for $URL" | tee -a $LOGFILE
+
+    if [ $STATUS_CODE -eq 200 ]; then
+        echo "$(timestamp) - Application is UP. HTTP Status: $STATUS_CODE" | tee -a $LOGFILE
+    else
+        echo "$(timestamp) - Application is DOWN. HTTP Status: $STATUS_CODE" | tee -a $LOGFILE
+    fi
+}
+
+# Main function to run the check and log results
+check_application_status
