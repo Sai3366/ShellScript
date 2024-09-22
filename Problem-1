@@ -1,0 +1,63 @@
+
+#!/bin/bash
+
+# Thresholds
+CPU_THRESHOLD=80
+MEMORY_THRESHOLD=80
+DISK_THRESHOLD=80
+PROCESS_THRESHOLD=200 # Customize based on your need
+
+# Log file
+LOGFILE="/var/log/system_health.log"
+
+# Get current timestamp
+timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
+
+# Check CPU usage
+check_cpu() {
+    CPU_USAGE=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1}')
+    
+    if (( $(echo "$CPU_USAGE > $CPU_THRESHOLD" | bc -l) )); then
+        echo "$(timestamp) - ALERT: CPU usage is at ${CPU_USAGE}%." | tee -a $LOGFILE
+    fi
+}
+
+# Check memory usage
+check_memory() {
+    MEMORY_USAGE=$(free | grep Mem | awk '{print $3/$2 * 100.0}')
+    
+    if (( $(echo "$MEMORY_USAGE > $MEMORY_THRESHOLD" | bc -l) )); then
+        echo "$(timestamp) - ALERT: Memory usage is at ${MEMORY_USAGE}%." | tee -a $LOGFILE
+    fi
+}
+
+# Check disk space
+check_disk() {
+    DISK_USAGE=$(df / | grep / | awk '{print $5}' | sed 's/%//g')
+    
+    if [ "$DISK_USAGE" -gt "$DISK_THRESHOLD" ]; then
+        echo "$(timestamp) - ALERT: Disk space usage is at ${DISK_USAGE}%." | tee -a $LOGFILE
+    fi
+}
+
+# Check running processes
+check_processes() {
+    PROCESS_COUNT=$(ps aux | wc -l)
+    
+    if [ "$PROCESS_COUNT" -gt "$PROCESS_THRESHOLD" ]; then
+        echo "$(timestamp) - ALERT: Running process count is ${PROCESS_COUNT}." | tee -a $LOGFILE
+    fi
+}
+
+# Main function to run all checks
+check_system_health() {
+    check_cpu
+    check_memory
+    check_disk
+    check_processes
+}
+
+# Run checks and log results
+check_system_health
