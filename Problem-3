@@ -1,0 +1,49 @@
+
+#!/bin/bash
+
+# Variables
+LOGFILE="/var/log/nginx/access.log" # Update this to your web server's log file path
+REPORTFILE="/var/log/webserver_report.log"
+
+# Get current timestamp
+timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
+
+# Function to count 404 errors
+count_404_errors() {
+    echo "404 Errors:" >> $REPORTFILE
+    grep "404" $LOGFILE | wc -l >> $REPORTFILE
+    echo "" >> $REPORTFILE
+}
+
+# Function to find the most requested pages
+most_requested_pages() {
+    echo "Most Requested Pages:" >> $REPORTFILE
+    awk '{print $7}' $LOGFILE | sort | uniq -c | sort -rn | head -10 >> $REPORTFILE
+    echo "" >> $REPORTFILE
+}
+
+# Function to find IPs with the most requests
+top_ip_addresses() {
+    echo "Top IP Addresses with Most Requests:" >> $REPORTFILE
+    awk '{print $1}' $LOGFILE | sort | uniq -c | sort -rn | head -10 >> $REPORTFILE
+    echo "" >> $REPORTFILE
+}
+
+# Main function to analyze logs and create report
+analyze_logs() {
+    echo "$(timestamp) - Web Server Log Analysis Report" > $REPORTFILE
+    echo "------------------------------------------" >> $REPORTFILE
+    count_404_errors
+    most_requested_pages
+    top_ip_addresses
+    echo "------------------------------------------" >> $REPORTFILE
+    echo "$(timestamp) - Report completed." >> $REPORTFILE
+}
+
+# Run the log analysis
+analyze_logs
+
+# Output the report to console
+cat $REPORTFILE
