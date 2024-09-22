@@ -1,0 +1,48 @@
+
+#!/bin/bash
+
+# Variables
+SOURCE_DIR="/path/to/source/directory"
+REMOTE_SERVER="user@remote-server:/path/to/remote/backup/"
+BUCKET_NAME="s3://your-s3-bucket-name"
+BACKUP_TYPE=$1 # Can be 'remote' or 's3'
+LOGFILE="/var/log/backup_report.log"
+
+# Get current timestamp
+timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
+
+# Function to backup to remote server using rsync
+backup_remote() {
+    echo "$(timestamp) - Starting backup to remote server..." | tee -a $LOGFILE
+    rsync -avz $SOURCE_DIR $REMOTE_SERVER
+    
+    if [ $? -eq 0 ]; then
+        echo "$(timestamp) - Backup to remote server succeeded." | tee -a $LOGFILE
+    else
+        echo "$(timestamp) - Backup to remote server failed!" | tee -a $LOGFILE
+    fi
+}
+
+# Function to backup to AWS S3
+backup_s3() {
+    echo "$(timestamp) - Starting backup to AWS S3..." | tee -a $LOGFILE
+    aws s3 sync $SOURCE_DIR $BUCKET_NAME
+    
+    if [ $? -eq 0 ]; then
+        echo "$(timestamp) - Backup to AWS S3 succeeded." | tee -a $LOGFILE
+    else
+        echo "$(timestamp) - Backup to AWS S3 failed!" | tee -a $LOGFILE
+    fi
+}
+
+# Check which backup type to use
+if [ "$BACKUP_TYPE" == "remote" ]; then
+    backup_remote
+elif [ "$BACKUP_TYPE" == "s3" ]; then
+    backup_s3
+else
+    echo "Usage: $0 [remote|s3]" | tee -a $LOGFILE
+    exit 1
+fi
